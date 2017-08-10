@@ -1,4 +1,4 @@
-# Prepare for MCPE 1+ - Pathway Studios (http://pathway.studio)
+# Translate Java 2 Bedrock - Pathway Studios (http://pathway.studio)
 # Copyright (C) 2017  Pathway Studios
 
 # This program is free software: you can redistribute it and/or modify
@@ -24,22 +24,11 @@ import json
 import urllib2
 
 
-from pymclevel import TAG_List
-from pymclevel import TAG_Byte
-from pymclevel import TAG_Int
-from pymclevel import TAG_Compound
-from pymclevel import TAG_Short
-from pymclevel import TAG_Double
-from pymclevel import TAG_String
-from pymclevel import TAG_Float
-from pymclevel import TileEntity
-from pymclevel import id_definitions
-from pymclevel import leveldb
-from pymclevel import leveldbpocket
+from pymclevel import TAG_List, TAG_Byte, TAG_Int, TAG_Compound, TAG_Short, TAG_Double, TAG_String, TAG_Float, TileEntity, id_definitions, leveldb, leveldbpocket
 
 
-displayName = "Prepare for MCPE 1+"
-VERSION = "0.9.6"
+displayName = "Translate Java 2 Bedrock"
+VERSION = "0.9.7"
 #CHANGE LOG - 
 # 0.9.0 - Big changes - refactored a ton of code. Closer to release.
 # 0.9.1 - WHAT? Command block support? awwww yisssssss
@@ -50,6 +39,7 @@ VERSION = "0.9.6"
 # 0.9.6 - added remote support for associations and spawner support
 
 
+# get pe-item-associations file, and check if user has latest copy
 associations = 0
 upgradeAssocations = 9
 idMappings = []
@@ -86,82 +76,42 @@ if ("version" in idMappingsRemote):
 		upgradeAssocations = 1
 		print("Updated associations file to version "+idMappings["version"])
 		
+# build interface informing user of pe-associates was upgraded was upgraded		
 inputs = ()				
 if upgradeAssocations == 1:
 	inputs =(("Associations File Upgraded to: "+idMappings["version"],"label"),
-		("Prepare for MCPE 1+", "label"),
-		("Export File Name:",("string","value=convter-to-pe-export.txt")),
-		("Remove Flatlands:", False),
-		("Fix Blocks:", False),
-		("Caution: Fix Blocks and Remove Flatlands can take a *long* time if you have a lot if blocks selected. Try to keep your selection at a minimum", "label"),	
-		("Prepare for MCPE 1+ :", False),
-		("Dump TileEntity:", False),
-		("Dump Entity:", False),
-		("Testing:", False)
+		("Translate Java 2 Bedrock", "label"),
+		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
+		("Java Mode:", False),
+		("Prepare for Bedrock :", False)
 	)
 elif associations == 0:
 	inputs =(("**CAUTION ASSOCIATIONS FILE NOT FOUND**", "label"),
-		("Prepare for MCPE 1+", "label"),
-		("Export File Name:",("string","value=convter-to-pe-export.txt")),
-		("Remove Flatlands:", False),
-		("Fix Blocks:", False),
-		("Caution: Fix Blocks and Remove Flatlands can take a *long* time if you have a lot if blocks selected. Try to keep your selection at a minimum", "label"),	
-		("Prepare for MCPE 1+ :", False),
-		("Dump TileEntity:", False),
-		("Dump Entity:", False),
-		("Testing:", False)
+		("Translate Java 2 Bedrock", "label"),
+		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
+		("Java Mode:", False),
+		("Prepare for Bedrock :", False)
 	)
 else:
-	inputs =(("Prepare for MCPE 1+", "label"),
-		("Export File Name:",("string","value=convter-to-pe-export.txt")),
-		("Remove Flatlands:", False),
-		("Fix Blocks:", False),
-		("Caution: Fix Blocks and Remove Flatlands can take a *long* time if you have a lot if blocks selected. Try to keep your selection at a minimum", "label"),	
-		("Prepare for MCPE 1+ :", False),
-		("Dump TileEntity:", False),
-		("Dump Entity:", False),
-		("Testing:", False)
+	inputs =(("Translate Java 2 Bedrock", "label"),
+		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
+		("Java Mode:", False),
+		("Prepare for Bedrock :", False)
 	)
 
-
+# list of tile entities to remove instead of trying to translate
 removeTileEntities = ['minecraft:structure_block']	
+# removeEntities is currently unused until entity support is added
+# currently ALL entities are removed
 removeEntities = ['ArmorStand']
+
+# some tile entity IDs have changed (support for pre-item name IDs)
 tileEntityNameReplacements = {'Control':'CommandBlock',
 							  'Noteblock':'Music',
 							  'EnchantingTable':'EnchantTable'}
-
-flatlandsBlockIDs = ['2',
-					 '3',
-					 '7']	
-					 
-newTrapDoorDataValues = ['3',
-						 '2',
-						 '1',
-						 '0',
-						 '11',
-						 '10',
-						 '9',
-						 '8',
-						 '7',
-						 '6',
-						 '5',
-						 '4',
-						 '15',
-						 '14',
-						 '13',
-						 '12']
-						 
-slabValuesMCPE = ['157',
-				  '158',
-				  '' ]
-
-newSlabValuesMCPE = ['']
-
-newSlabValueJava = ['']
-
-flatlandsY = 4					   
+				   
 							 
-
+# convert ID name to bedrock version (e.g. minecraft:command_block to CommandBlock)
 def fixID(id):
 	id = id.replace("minecraft:","").capitalize()
 	id = id.split("_")
@@ -170,6 +120,7 @@ def fixID(id):
 		newid += i.capitalize()
 	return newid
 
+# remove minecraft namespace
 def stripID(id):
 	return id.replace("minecraft:","")
 	
@@ -179,7 +130,7 @@ def perform(level, box, options):
 	file_name = options["Export File Name:"]
 
 	if file_name == "":
-		file_name = "convert-to-pe-export.txt"
+		file_name = "translate-java-2-bedrock.txt"
 
 	if file_name.find(".txt") < 0:
 		file_name += ".txt"
@@ -187,99 +138,6 @@ def perform(level, box, options):
 	output_text = ''
 	contents = ''
 	
-	if options["Testing:"]:
-		notedChunks = [ ]
-		count = 0
-		for (chunk, slices, point) in level.getChunkSlices(box):
-			for t in chunk.TileEntities:
-				id = t["id"].value
-				x = t["x"].value
-				y = t["y"].value
-				z = t["z"].value	
-				if (x,y,z) in box and "StructureBlock" in id:
-					blockid = level.blockAt(x,y,z)
-					chunkX = t["x"].value / 16
-					chunkZ = t["z"].value / 16	
-					chunk.TileEntities.remove(t)
-					#newte = TileEntity.Create(id)
-					#newte = t
-					#if not (chunkX,chunkZ) in notedChunks:
-					#	if t["EntityId"].value == 32:
-					#		print ("zombie spawner at: " + str(x)+" "+str(y)+" "+str(z))
-					#		newte["EntityId"] = TAG_Int(47)
-					#		notedChunks.append((chunkX,chunkZ))
-					#		count += 1
-					#newte["MaxNearbyEntities"] = TAG_Short(12)
-					#newte["SpawnCount"] = TAG_Short(6)
-					#newte["SpawnRange"] = TAG_Short(6)
-					#newte["MaxSpawnDelay"] = TAG_Short(400)
-					#newte["id"] = TAG_String(str(id))
-					#chunk.TileEntities.append(newte)
-					#level.setBlockAt(x, y, z, blockid)
-					
-					
-		print(count)
-
-	if options["Dump TileEntity:"]:
-		checkedPositions = []
-		evalue = []
-		entitiess=""
-		for (chunk, slices, point) in level.getChunkSlices(box):
-			for t in chunk.TileEntities:				
-				x = t["x"].value
-				y = t["y"].value
-				z = t["z"].value	
-				id = t["id"].value	
-				if (x,y,z) in box:
-					block = level.blockAt(x,y,z)
-					bdata = level.blockDataAt(x,y,z)
-					print(block, bdata, x, y, z)
-					print(str(t))
-					contents += "----"+id+":"+str(bdata)+" "+str(x)+","+str(y)+","+str(z)+"\n"
-					contents += str(chunk)+"\n"+ str(t) + "\n\n"
-					output_text += contents
-					
-	if options["Dump Entity:"]:
-		checkedPositions = []
-		evalue = []
-		entitiess=""
-		for (chunk, slices, point) in level.getChunkSlices(box):
-			for e in chunk.Entities:
-				x = e["Pos"][0].value
-				y = e["Pos"][1].value
-				z = e["Pos"][2].value	
-				id = e["id"].value	
-				if (x,y,z) in box:
-					print(str(e))
-					contents += "----"+id+" "+str(x)+","+str(y)+","+str(z)+"\n"
-					contents += str(chunk)+"\n"+ str(e) + "\n\n"
-					output_text += contents
-
-	if options["Remove Flatlands:"]:
-		
-		positions = itertools.product(
-			xrange(box.minx, box.maxx),
-			xrange(box.miny, min(box.maxy, flatlandsY)),
-			xrange(box.minz, box.maxz))
-
-		for x, y, z in positions:
-			block = level.blockAt(x,y,z)
-			if str(block) in flatlandsBlockIDs:
-				level.setBlockAt(x, y, z, 0)
-
-	if options["Fix Blocks:"]:
-
-		positions = itertools.product(
-			xrange(box.minx, box.maxx),
-			xrange(box.miny, box.maxy),
-			xrange(box.minz, box.maxz))
-
-		for x, y, z in positions:
-			block = level.blockAt(x,y,z)
-			bdata = level.blockDataAt(x,y,z)
-			if block == 96 or block == 167:
-				level.setBlockDataAt(x, y, z, newTrapDoorDataValues[bdata])
-
 					
 	if options["Prepare for MCPE 1+ :"]:
 		tileEntitiesToReplace = []
@@ -289,6 +147,7 @@ def perform(level, box, options):
 		tileEntityContainer = []
 		entityContainer = []
 		for (chunk, slices, point) in level.getChunkSlices(box):
+			# get list of all entities in selection
 			for t in chunk.TileEntities:				
 				x = t["x"].value
 				y = t["y"].value
@@ -299,9 +158,12 @@ def perform(level, box, options):
 					tileEntityContainer.append(coords)
 					if (x,y,z) in box:
 						if id in removeTileEntities:
+							# tile entities that need to be removed
 							tileEntitiesToRemove.append((chunk, t))		
 						else:
+							# tile entities that need to be translated
 							tileEntitiesToReplace.append((chunk, t))
+			# get all entities in selection
 			for e in chunk.Entities:
 				x = e["Pos"][0].value
 				y = e["Pos"][1].value
@@ -311,7 +173,9 @@ def perform(level, box, options):
 				if (coords) not in entityContainer:	
 					entityContainer.append(coords)					
 					if (x,y,z) in box:
+						# delete tile entity
 						entitiesToRemove.append((chunk, e))
+						# removed replacement code until entities can be translated
 						#if (id in removeEntities):
 							#entitiesToRemove.append((chunk, e))	
 						#else:
@@ -324,6 +188,7 @@ def perform(level, box, options):
 				y = t["y"].value
 				z = t["z"].value
 				id = fixID(t["id"].value)	
+				# check to see if the ID needs to be translated
 				if id in tileEntityNameReplacements:
 					id = tileEntityNameReplacements[id]
 				blockid = level.blockAt(x,y,z)
@@ -332,6 +197,9 @@ def perform(level, box, options):
 				chunk.TileEntities.remove(t)
 				newte = TileEntity.Create(id)
 				TileEntity.setpos(newte, (x, y, z))
+				# rewrite spawner data - no features carried over as bedrock doesn't support
+				# SpawnData or SpawnPotentials
+				# adding MinSpawnDelay, MaxSpawnDelay, MaxNearbyEntities, etc is a good idea
 				if ("MobSpawner" in id):
 					try:
 						entityName = t["SpawnData"]["id"].value.replace("minecraft:","")
@@ -353,8 +221,10 @@ def perform(level, box, options):
 						del newte["SpawnData"]
 						del newte["SpawnPotentials"]
 						newte["EntityId"] = TAG_Int(32)
+				# MCEdit doesn't add all the needed tags when creating a new tile entity
 				if ("Items" in t) and (not "Items" in newte):
 					newte["Items"]=TAG_List()
+				# if the tile entity has an inventory, convert the inventory
 				if ("Items" in t) and ("Items" in newte):
 					for i in t["Items"]:
 						if not str(i["id"].value).isdigit():
@@ -431,9 +301,12 @@ def perform(level, box, options):
 								del item["tag"]["CanDestroy"]
 								item["CanDestroy"] = canDestroy
 						newte["Items"].append(item)
+				# convert command block data after fixing the ID earlier
 				if id == "CommandBlock":
 					newte = t
 					del newte["UpdateLastExecution"]
+				# my attempt at converting signs with or without json data
+				# still probably breaks some (most?) signs that are json formatted
 				if id == "Sign":
 					if "Text1" in t:
 						if t["Text1"].value.find('"text":') > 0:
@@ -487,6 +360,9 @@ def perform(level, box, options):
 									text4 = text4[:-1]
 									text4 = text4[1:]
 							newte["Text4"] = TAG_String(text4)
+				# convert new style brewing stands (with blaze powder) to old style
+				# will need to be reverted for 1.2 (which uses blaze powder)
+				# also translates some tags
 				if id == "BrewingStand":
 					itemHolder = TAG_List()
 					if "BrewTime" in t:
@@ -542,7 +418,13 @@ def perform(level, box, options):
 					newte["Items"] = itemHolder
 				newte["id"] = TAG_String(str(id))
 				chunk.TileEntities.append(newte)
-				level.setBlockAt(x, y, z, blockid)
+				# playing around with java mode. If enabled it removes the block be keeps
+				# the tile entity data. usecase would be to copy the tile entity data over
+				# a world converted with a different tool
+				if options["Java Mode:"]:
+					level.setBlockAt(x, y, z, 0)
+				else: 
+					level.setBlockAt(x, y, z, blockid)
 								
 		if tileEntitiesToRemove:
 			for (chunk, t) in tileEntitiesToRemove:
@@ -565,6 +447,8 @@ def perform(level, box, options):
 				contents += str(chunk)+"\n"+ str(e) + "\n\n"
 				chunk.Entities.remove(e)
 
+		# beginning of translate entity data
+		# not currently used
 		if 	entitiesToUpdate:
 			for (chunk, e) in entitiesToUpdate:
 				x = e["Pos"][0].value
