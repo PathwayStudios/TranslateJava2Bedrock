@@ -117,6 +117,7 @@ def fixID(id):
 		id = id.split("_")
 		newid = ""
 		for i in id:
+			i = i.replace("minecraft:","")
 			newid += i.capitalize()
 		return newid
 	else:
