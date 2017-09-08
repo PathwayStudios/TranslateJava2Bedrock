@@ -83,20 +83,20 @@ if upgradeAssocations == 1:
 		("Translate Java 2 Bedrock", "label"),
 		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
 		("Java Mode:", False),
-		("Prepare for Bedrock :", False)
+		("Prepare for Bedrock:", False)
 	)
 elif associations == 0:
 	inputs =(("**CAUTION ASSOCIATIONS FILE NOT FOUND**", "label"),
 		("Translate Java 2 Bedrock", "label"),
 		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
 		("Java Mode:", False),
-		("Prepare for Bedrock :", False)
+		("Prepare for Bedrock:", False)
 	)
 else:
 	inputs =(("Translate Java 2 Bedrock", "label"),
 		("Export File Name:",("string","value=translate-java-2-bedrock.txt")),
 		("Java Mode:", False),
-		("Prepare for Bedrock :", False)
+		("Prepare for Bedrock:", False)
 	)
 
 # list of tile entities to remove instead of trying to translate
@@ -113,16 +113,21 @@ tileEntityNameReplacements = {'Control':'CommandBlock',
 							 
 # convert ID name to bedrock version (e.g. minecraft:command_block to CommandBlock)
 def fixID(id):
-	id = id.replace("minecraft:","").capitalize()
-	id = id.split("_")
-	newid = ""
-	for i in id:
-		newid += i.capitalize()
-	return newid
-
+	if id.find("_") > 0:
+		id = id.split("_")
+		newid = ""
+		for i in id:
+			newid += i.capitalize()
+		return newid
+	else:
+		return id
 # remove minecraft namespace
 def stripID(id):
-	return id.replace("minecraft:","")
+	id = str(id)
+	if id.find("minecraft:") > 0:
+		return id.replace("minecraft:","")
+	else:
+		return
 	
 def perform(level, box, options):
 	start = time.time()
@@ -139,7 +144,7 @@ def perform(level, box, options):
 	contents = ''
 	
 					
-	if options["Prepare for MCPE 1+ :"]:
+	if options["Prepare for Bedrock:"]:
 		tileEntitiesToReplace = []
 		tileEntitiesToRemove = []
 		entitiesToRemove = []
@@ -205,21 +210,27 @@ def perform(level, box, options):
 						entityName = t["SpawnData"]["id"].value.replace("minecraft:","")
 					except KeyError:
 						entityName = t["EntityId"].value
-					if (fixID(entityName) in idMappings["entities"]):
+					if not str(entityName).isdigit():
+						entityName = fixID(entityName)
+					if (entityName in idMappings["entities"]):
 						newte = t
-						del newte["SpawnData"]
-						del newte["SpawnPotentials"]
+						if "SpawnData" in newte:
+							del newte["SpawnData"]
+						if "SpawnPotentials" in newte:
+							del newte["SpawnPotentials"]
 						if entityName.isdigit():
 							entityId = entityName
 						else:
 							entityId = idMappings["entities"][fixID(entityName)]
 						newte["EntityId"] = TAG_Int(int(entityId))
 					else:
-						print("ENTITY NOT FOUND REPLACED WITH ZOMBIE: "+str(entityName).lower()+" "+str(x)+","+str(y)+","+str(z))
-						contents += "ENTITY NOT FOUND REPLACED WITH ZOMBIE: "+str(entityName).lower()+" "+str(x)+","+str(y)+","+str(z)+"\n"
+						print("ENTITY NOT FOUND REPLACED WITH ZOMBIE: "+str(entityName)+" "+str(x)+","+str(y)+","+str(z))
+						contents += "ENTITY NOT FOUND REPLACED WITH ZOMBIE: "+str(entityName)+" "+str(x)+","+str(y)+","+str(z)+"\n"
 						newte = t
-						del newte["SpawnData"]
-						del newte["SpawnPotentials"]
+						if "SpawnData" in newte:						
+							del newte["SpawnData"]
+						if "SpawnPotentials" in newte:							
+							del newte["SpawnPotentials"]
 						newte["EntityId"] = TAG_Int(32)
 				# MCEdit doesn't add all the needed tags when creating a new tile entity
 				if ("Items" in t) and (not "Items" in newte):
@@ -304,7 +315,20 @@ def perform(level, box, options):
 				# convert command block data after fixing the ID earlier
 				if id == "CommandBlock":
 					newte = t
-					del newte["UpdateLastExecution"]
+					if "UpdateLastExecution" in newte:
+						del newte["UpdateLastExecution"]
+					if "auto" not in newte:
+						newte["auto"] = TAG_Byte(0)
+					if "powered" not in newte:
+						newte["powered"] = TAG_Byte(0)				
+					if "SuccessCount" not in newte:
+						newte["SuccessCount"] = TAG_Int(0)
+					if "conditionMet" not in newte:
+						newte["conditionMet"] = TAG_Byte(0)		
+					if "TrackOutput" not in newte:
+						newte["TrackOutput"] = TAG_Byte(0)		
+					if ("CustomName" not in newte) or newte["CustomName"] == TAG_String(u'@'):
+						newte["CustomName"] = TAG_String('')
 				# my attempt at converting signs with or without json data
 				# still probably breaks some (most?) signs that are json formatted
 				if id == "Sign":
