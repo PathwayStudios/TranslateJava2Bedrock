@@ -121,7 +121,7 @@ def fixID(id):
 			newid += i.capitalize()
 		return newid
 	else:
-		return id.replace("minecraft:","")
+		return id.replace("minecraft:","").capitalize()
 # remove minecraft namespace
 def stripID(id):
 	id = str(id)
