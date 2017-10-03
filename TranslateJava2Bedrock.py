@@ -121,14 +121,11 @@ def fixID(id):
 			newid += i.capitalize()
 		return newid
 	else:
-		return id
+		return id.replace("minecraft:","")
 # remove minecraft namespace
 def stripID(id):
 	id = str(id)
-	if id.find("minecraft:") > 0:
-		return id.replace("minecraft:","")
-	else:
-		return
+	return id.replace("minecraft:","")
 	
 def perform(level, box, options):
 	start = time.time()
