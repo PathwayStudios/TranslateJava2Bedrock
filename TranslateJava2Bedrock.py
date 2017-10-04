@@ -203,6 +203,14 @@ def perform(level, box, options):
 				# rewrite spawner data - no features carried over as bedrock doesn't support
 				# SpawnData or SpawnPotentials
 				# adding MinSpawnDelay, MaxSpawnDelay, MaxNearbyEntities, etc is a good idea
+				if ("Banner" in id):
+					newte = t
+					del newte["Patterns"]
+				if ("Skull" in id):
+					newte = t
+					newte["MouthMoving"] = TAG_Byte(0)
+					newte["MouthTickCount"] = TAG_Int(0)
+					
 				if ("MobSpawner" in id):
 					try:
 						entityName = t["SpawnData"]["id"].value.replace("minecraft:","")
@@ -210,6 +218,7 @@ def perform(level, box, options):
 						entityName = t["EntityId"].value
 					if not str(entityName).isdigit():
 						entityName = fixID(entityName)
+						print(entityName)
 					if (entityName in idMappings["entities"]):
 						newte = t
 						if "SpawnData" in newte:
@@ -219,7 +228,7 @@ def perform(level, box, options):
 						if entityName.isdigit():
 							entityId = entityName
 						else:
-							entityId = idMappings["entities"][fixID(entityName)]
+							entityId = idMappings["entities"][entityName]
 						newte["EntityId"] = TAG_Int(int(entityId))
 					else:
 						print("ENTITY NOT FOUND REPLACED WITH ZOMBIE: "+str(entityName)+" "+str(x)+","+str(y)+","+str(z))
